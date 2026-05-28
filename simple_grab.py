@@ -206,6 +206,14 @@ try:
 
     # Generate the initial flat text layer template
     text_layer = logo_rotation.create_text_layer(text_string, font_style, font_scale, text_color, thickness)
+    # --- ADD WINDOW SIZE CONFIGURATIONS HERE ---
+    # Define your target window sizes (Width, Height)
+    intensity_window_width, intensity_window_height = 800, 600
+    depth_window_width, depth_window_height = 400, 300
+
+    # Configure the Intensity window
+    cv2.namedWindow('_2d_intensity_color', cv2.WINDOW_NORMAL)
+    cv2.resizeWindow('_2d_intensity_color', intensity_window_width, intensity_window_height)
     
     while True:
         with ia.fetch() as buffer:
