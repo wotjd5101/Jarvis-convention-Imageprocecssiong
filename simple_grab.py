@@ -7,7 +7,6 @@ import platform
 
 # This is used for reshaping the image buffers.
 import numpy as np
-from PIL import Image
 # This is used for visualization.
 import cv2
 
@@ -21,6 +20,7 @@ from datetime import datetime
 from huggingface_hub import hf_hub_download
 from ultralytics import YOLO
 from supervision import Detections
+import logo_rotation
 
 def find_producer(name):
     """ Helper for the GenTL producers from the environment path.
@@ -191,12 +191,22 @@ try:
     # Start image acquisition.
     ia.start()
     
-    # download model
-    model_path = hf_hub_download(repo_id="arnabdhar/YOLOv8-Face-Detection", filename="model.pt")
+    # download faceModel
+    FaceModel_Path = hf_hub_download(repo_id="arnabdhar/YOLOv8-Face-Detection", filename="model.pt")
+    # load faceModel
+    faceModel = YOLO(FaceModel_Path)
+    
+    spin_angle = 0
+    # --- SETUP VARIABLES ---
+    text_string = "JARVIS"
+    font_style = cv2.FONT_HERSHEY_COMPLEX
+    font_scale = 1.3
+    text_color = (212, 82, 0)  # Green text
+    thickness = 4
 
-    # load model
-    model = YOLO(model_path)
-
+    # Generate the initial flat text layer template
+    text_layer = logo_rotation.create_text_layer(text_string, font_style, font_scale, text_color, thickness)
+    
     while True:
         with ia.fetch() as buffer:
             # Warning: The buffer is only valid in the with statement and will be destroyed
@@ -246,9 +256,18 @@ try:
             #cv2.imshow('_2d_intensity_color', rgb_like_intensityImg)
             
             now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S") 
-            outputs = model(rgb_like_intensityImg, conf=0.3)
+            outputs = faceModel(rgb_like_intensityImg, conf=0.5)
             results = Detections.from_ultralytics(outputs[0])
 
+            # Progress spinning angle step (Increase to spin faster, decrease to slow down)
+            spin_angle = (spin_angle + 4) % 360
+            
+            # Process current horizontal tilt layer frame (fov=250 provides clean depth perspective)
+            rotated_text = logo_rotation.get_horizontally_rotated_layer(text_layer, spin_angle, fov=250)
+            th, tw = rotated_text.shape[:2]
+
+            
+            #call all detected boxes
             for i in range(len(results)):
                 
                 result = results[i]
@@ -290,7 +309,7 @@ try:
                     color = (255 , 0, 0) #Blue
                     thickness = 2
                     
-                    cv2.putText(rgb_like_intensityImg,  text, coordinates, font, font_scale, color, thickness, cv2.LINE_AA)
+                    #cv2.putText(rgb_like_intensityImg,  text, coordinates, font, font_scale, color, thickness, cv2.LINE_AA)
                     
                     #Dot on an input image
 
@@ -308,7 +327,32 @@ try:
                     
                     # Print out the distance in millimeters (mm)
                     print(f"Coordinates at ({x_px_center}, {y_px_center}) -> X: {x_coord:.2f}mm, Y: {y_coord:.2f}mm, Depth (Z): {z_depth:.2f}mm")
-        
+
+                    x_off = x_px_center 
+                    y_off = y_px_center - 80
+                    
+                    roi = rgb_like_intensityImg[y_off - int(th/2):y_off + int(th/2) if y_off+int(th/2) <= intensity.height else intensity.height , x_off - int(tw/2):x_off+int(tw/2) if x_off+int(tw/2) <= intensity.width else intensity.width]
+                    print(f"y_off: {y_off} x_off: {x_off} th: {th} tw: {tw}")
+                    
+                    if roi.size == 0 or roi.shape[0] == 0 or roi.shape[1] == 0:
+                        continue
+                    #2 Extract the actual height and width
+                    roi_h, roi_w = roi.shape[0], roi.shape[1]
+                    
+                    #3. Crop your roated text to Match the ROI dimensions exactly
+                    cropped_rotated_text = rotated_text[0:roi_h, 0:roi_w]
+                    
+                    gray = cv2.cvtColor(cropped_rotated_text, cv2.COLOR_BGR2GRAY)
+                    _, mask = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
+                    mask_inv = cv2.bitwise_not(mask)
+                    
+                    # Segment out foreground and background, then combine them seamlessly
+                    bg = cv2.bitwise_and(roi, roi, mask=mask_inv)
+                    fg = cv2.bitwise_and(cropped_rotated_text, cropped_rotated_text, mask=mask)
+                    
+                    rgb_like_intensityImg[y_off - int(th/2):y_off + int(th/2) , x_off - int(tw/2):x_off+int(tw/2)] = cv2.add(bg, fg)
+                    #rgb_like_intensityImg[y_off - int(th/2):y_off + int(th/2) , x_off - int(tw/2):x_off+int(tw/2)] = fg
+                    
             print(f"The number of output: {len(outputs)}")  
              
             cv2.imshow('_2d_intensity_color', rgb_like_intensityImg)
