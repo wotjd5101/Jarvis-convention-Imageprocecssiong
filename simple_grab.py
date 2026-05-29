@@ -159,7 +159,7 @@ try:
     # ia.remote_device.node_map.DepthMin.value = depthMin
     # ia.remote_device.node_map.DepthMax.value = depthMax
     ia.remote_device.node_map.DepthMin.value = 0
-    ia.remote_device.node_map.DepthMax.value = 5000
+    ia.remote_device.node_map.DepthMax.value = 9990
     print("Min. Depth [mm]: ", ia.remote_device.node_map.DepthMin.value)
     print("Max. Depth [mm]: ", ia.remote_device.node_map.DepthMax.value)
 
@@ -256,18 +256,22 @@ try:
             #cv2.imshow('_2d_intensity', _2d_intensity)
 
             # dtype: uint16
-            #cv2.imshow('_2d_confidence', _2d_confidence)
+            cv2.imshow('_2d_confidence', _2d_confidence)
             
             rgb_like_intensityImg = cv2.cvtColor(_2d_intensity, cv2.COLOR_GRAY2RGB)
-            
             #convert uint16 to uint8
             rgb_like_intensityImg = (rgb_like_intensityImg/256).astype(np.uint8)
+            
+            rgb_like_confidenceImg = cv2.cvtColor(_2d_confidence, cv2.COLOR_GRAY2RGB)
+            rgb_like_confidenceImg = (rgb_like_confidenceImg/256).astype(np.uint8)
+            
             #cv2.imshow('_2d_intensity_color', rgb_like_intensityImg)
             
             now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S") 
             outputs = faceModel(rgb_like_intensityImg, conf=0.5)
             results_head = Detections.from_ultralytics(outputs[0])
-            results_hand = handModel(rgb_like_intensityImg)
+            
+            results_hand = handModel(rgb_like_confidenceImg, iou=0.45, conf=0.25)
 
             # Progress spinning angle step (Increase to spin faster, decrease to slow down)
             spin_angle = (spin_angle + 10) % 360
@@ -364,7 +368,7 @@ try:
                     #rgb_like_intensityImg[y_off - int(th/2):y_off + int(th/2) , x_off - int(tw/2):x_off+int(tw/2)] = fg
                     
             print(f"The number of output: {len(outputs)}")  
-            
+            """
             for result in results_hand :
 
                 boxes = result.boxes
@@ -385,9 +389,8 @@ try:
                     dot_color = (0,0,255) #Blue
                     dot_thinkness = -1
 
-                    cv2.circle(rgb_like_intensityImg, dot_center, dot_radius, dot_color, dot_thinkness)
-                
-                
+                    #cv2.circle(rgb_like_intensityImg, dot_center, dot_radius, dot_color, dot_thinkness)
+                """
             cv2.imshow('_2d_intensity_color', rgb_like_intensityImg)
             cv2.imshow('depth', _3d_scaled[:, :, 2].astype(np.uint8))
 
