@@ -265,7 +265,7 @@ try:
             #cv2.imshow('_2d_intensity_color', rgb_like_intensityImg)
             
             now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S") 
-            outputs = faceModel(rgb_like_intensityImg, conf=0.3)
+            outputs = faceModel(rgb_like_intensityImg, conf=0.5)
             results_head = Detections.from_ultralytics(outputs[0])
             results_hand = handModel(rgb_like_intensityImg)
 
@@ -364,7 +364,27 @@ try:
                     #rgb_like_intensityImg[y_off - int(th/2):y_off + int(th/2) , x_off - int(tw/2):x_off+int(tw/2)] = fg
                     
             print(f"The number of output: {len(outputs)}")  
-             
+            
+            for result in results_hand :
+
+                boxes = result.boxes
+                keypoints = result.keypoints.xy.cpu().numpy()
+                
+                for box, keypoint in zip(boxes, keypoints):
+                    
+                    x1, y1, x2, y2 = box.xyxy[0].tolist()
+                    middle_finger_mcp = keypoint[9]
+                    
+                    print(f"box x1: {x1} middle_finger_mcp: {middle_finger_mcp}")
+                    
+                    dot_center = (int((x1+x2)/2), int((y1+y2)/2))
+                    dot_radius = 5
+                    dot_color = (255,0,0) #Blue
+                    dot_thinkness = -1
+
+                    cv2.circle(rgb_like_intensityImg, dot_center, dot_radius, dot_color, dot_thinkness)
+                
+                
             cv2.imshow('_2d_intensity_color', rgb_like_intensityImg)
             cv2.imshow('depth', _3d_scaled[:, :, 2].astype(np.uint8))
 
