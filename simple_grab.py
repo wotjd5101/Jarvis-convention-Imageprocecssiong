@@ -372,14 +372,17 @@ try:
                 
                 for box, keypoint in zip(boxes, keypoints):
                     
-                    x1, y1, x2, y2 = box.xyxy[0].tolist()
-                    middle_finger_mcp = keypoint[9]
+                    boxX1, boxY1, boxX2, boxY2 = box.xyxy[0].tolist()
+                    #middle_finger_mcp = keypoint[9]
+                    Index_Finger_Tip = keypoint[8]
+                    tipX, tipY = Index_Finger_Tip.tolist()
+
+                    print(f"box x1: {boxX1} middle_finger_mcp: {Index_Finger_Tip}")
                     
-                    print(f"box x1: {x1} middle_finger_mcp: {middle_finger_mcp}")
-                    
-                    dot_center = (int((x1+x2)/2), int((y1+y2)/2))
+                    #Index_Finger_Tip dot circle on rgb intensity image
+                    dot_center = (int(tipX), int(tipY))
                     dot_radius = 5
-                    dot_color = (255,0,0) #Blue
+                    dot_color = (0,0,255) #Blue
                     dot_thinkness = -1
 
                     cv2.circle(rgb_like_intensityImg, dot_center, dot_radius, dot_color, dot_thinkness)
