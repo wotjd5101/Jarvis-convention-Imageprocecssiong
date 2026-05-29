@@ -195,6 +195,7 @@ try:
     FaceModel_Path = hf_hub_download(repo_id="arnabdhar/YOLOv8-Face-Detection", filename="model.pt")
     # load faceModel
     faceModel = YOLO(FaceModel_Path)
+    handModel = YOLO(r"runs/pose/train-4/weights/best.pt")
     
     spin_angle = 0
     # --- SETUP VARIABLES ---
@@ -264,11 +265,12 @@ try:
             #cv2.imshow('_2d_intensity_color', rgb_like_intensityImg)
             
             now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S") 
-            outputs = faceModel(rgb_like_intensityImg, conf=0.5)
-            results = Detections.from_ultralytics(outputs[0])
+            outputs = faceModel(rgb_like_intensityImg, conf=0.3)
+            results_head = Detections.from_ultralytics(outputs[0])
+            results_hand = handModel(rgb_like_intensityImg)
 
             # Progress spinning angle step (Increase to spin faster, decrease to slow down)
-            spin_angle = (spin_angle + 4) % 360
+            spin_angle = (spin_angle + 10) % 360
             
             # Process current horizontal tilt layer frame (fov=250 provides clean depth perspective)
             rotated_text = logo_rotation.get_horizontally_rotated_layer(text_layer, spin_angle, fov=250)
@@ -276,15 +278,15 @@ try:
 
             
             #call all detected boxes
-            for i in range(len(results)):
+            for i in range(len(results_head)):
                 
-                result = results[i]
+                result = results_head[i]
 
                 boxes = result.xyxy
                 scores = result.confidence
                 classes = result.class_id
                 
-                print("Result %s" %len(results))
+                print("Result %s" %len(results_head))
                         
                 for box, score, cls in zip(boxes, scores, classes):
                     

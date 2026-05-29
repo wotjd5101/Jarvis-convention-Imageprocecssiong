@@ -103,7 +103,8 @@ if __name__ == "__main__":
         canvas = np.full((500, 500, 3), 255, dtype=np.uint8)
         
         # Progress spinning angle step (Increase to spin faster, decrease to slow down)
-        spin_angle = (spin_angle + 4) % 360
+        #spin_angle = (spin_angle + 4) % 360
+        spin_angle = (spin_angle + 100) % 360
         
         # Process current horizontal tilt layer frame (fov=250 provides clean depth perspective)
         rotated_text = get_horizontally_rotated_layer(text_layer, spin_angle, fov=250)
