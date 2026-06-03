@@ -212,9 +212,17 @@ try:
     intensity_window_width, intensity_window_height = 800, 600
     depth_window_width, depth_window_height = 400, 300
 
+    """
     # Configure the Intensity window
     cv2.namedWindow('_2d_intensity_color', cv2.WINDOW_NORMAL)
     cv2.resizeWindow('_2d_intensity_color', intensity_window_width, intensity_window_height)
+    """
+    
+    # Make the display resizable window
+    cv2.namedWindow('_2d_intensity_color', cv2.WINDOW_NORMAL)
+    # 2. Force the window to expand into full-screen mode
+    cv2.setWindowProperty('_2d_intensity_color', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+    
     
     while True:
         with ia.fetch() as buffer:
