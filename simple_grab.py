@@ -224,17 +224,6 @@ try:
     WINDOW_WIDTH = int(SCREEN_WIDTH/2)
     WINDOW_HEIGHT = int(SCREEN_HEIGHT)
     
-    # Configure the Intensity window
-    cv2.namedWindow('_2d_intensity_color', cv2.WINDOW_NORMAL)
-    cv2.resizeWindow('_2d_intensity_color', intensity_window_width, intensity_window_height)
-
-    """
-    # Make the display resizable window
-    cv2.namedWindow('_2d_intensity_color', cv2.WINDOW_NORMAL)
-    # 2. Force the window to expand into full-screen mode
-    cv2.setWindowProperty('_2d_intensity_color', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-    """   
-    
     while True:
         with ia.fetch() as buffer:
             # Warning: The buffer is only valid in the with statement and will be destroyed
@@ -275,7 +264,7 @@ try:
             #cv2.imshow('_2d_intensity', _2d_intensity)
 
             # dtype: uint16
-            cv2.imshow('_2d_confidence', _2d_confidence)
+            #cv2.imshow('_2d_confidence', _2d_confidence)
             
             rgb_like_intensityImg = cv2.cvtColor(_2d_intensity, cv2.COLOR_GRAY2RGB)
             #convert uint16 to uint8
@@ -433,7 +422,6 @@ try:
             cv2.setWindowProperty('_2d_Images_W/Text', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
             
             cv2.imshow('_2d_Images_W/Text', combined_screen)
-            cv2.imshow('_2d_intensity_color', rgb_like_intensityImg)
             #cv2.imshow('depth', _3d_scaled[:, :, 2].astype(np.uint8))
 
             #cv2.imwrite(fr"_2d_intensity/{now}.png", _2d_intensity)

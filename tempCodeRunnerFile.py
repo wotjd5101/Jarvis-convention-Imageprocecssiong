@@ -1,1 +1,1 @@
-s
+cv2.imshow
