@@ -9,6 +9,7 @@ import platform
 import numpy as np
 # This is used for visualization.
 import cv2
+import tkinter as tk
 
 # Use of Harvester to access the camera.
 # For more information regarding Harvester, visit the github page:
@@ -138,7 +139,7 @@ try:
     print(f"Allowed Exposure Range: {min_exposure} us to {max_exposure} us")
 
     # 3. Set a new Exposure Time (e.g., 2000 microseconds)
-    target_exposure = 600 
+    target_exposure = 2000
     
     # Ensure our target fits within the camera's current allowed bounds
     if min_exposure <= target_exposure <= max_exposure:
@@ -212,17 +213,27 @@ try:
     intensity_window_width, intensity_window_height = 800, 600
     depth_window_width, depth_window_height = 400, 300
 
-    """
+    # Initialize a hidden tkinter root window
+    root = tk.Tk()
+    root.withdraw()
+    
+    # Fetch screen metrics
+    SCREEN_WIDTH = root.winfo_screenwidth()
+    SCREEN_HEIGHT = root.winfo_screenheight()
+    
+    WINDOW_WIDTH = int(SCREEN_WIDTH/2)
+    WINDOW_HEIGHT = int(SCREEN_HEIGHT)
+    
     # Configure the Intensity window
     cv2.namedWindow('_2d_intensity_color', cv2.WINDOW_NORMAL)
     cv2.resizeWindow('_2d_intensity_color', intensity_window_width, intensity_window_height)
+
     """
-    
     # Make the display resizable window
     cv2.namedWindow('_2d_intensity_color', cv2.WINDOW_NORMAL)
     # 2. Force the window to expand into full-screen mode
     cv2.setWindowProperty('_2d_intensity_color', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-    
+    """   
     
     while True:
         with ia.fetch() as buffer:
@@ -271,15 +282,20 @@ try:
             rgb_like_intensityImg = (rgb_like_intensityImg/256).astype(np.uint8)
             
             rgb_like_confidenceImg = cv2.cvtColor(_2d_confidence, cv2.COLOR_GRAY2RGB)
+            #convert uint16 to uint8
             rgb_like_confidenceImg = (rgb_like_confidenceImg/256).astype(np.uint8)
             
-            #cv2.imshow('_2d_intensity_color', rgb_like_intensityImg)
-            
+            #Resize the confidence and intensity images
+            rgb_like_confidenceImg_resize = cv2.resize(rgb_like_confidenceImg, (WINDOW_WIDTH, int(WINDOW_HEIGHT/2)))
+            #copy the intensity image in different memory
+            rgb_like_intensityImg_xyxy = rgb_like_intensityImg.copy()
+
             now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S") 
-            outputs = faceModel(rgb_like_intensityImg, conf=0.5)
+            #outputs = faceModel(rgb_like_intensityImg, conf=0.5)
+            outputs = faceModel(rgb_like_intensityImg, conf=0.3)
             results_head = Detections.from_ultralytics(outputs[0])
             
-            results_hand = handModel(rgb_like_confidenceImg, iou=0.45, conf=0.25)
+            #results_hand = handModel(rgb_like_confidenceImg, iou=0.45, conf=0.25)
 
             # Progress spinning angle step (Increase to spin faster, decrease to slow down)
             spin_angle = (spin_angle + 10) % 360
@@ -288,7 +304,6 @@ try:
             rotated_text = logo_rotation.get_horizontally_rotated_layer(text_layer, spin_angle, fov=250)
             th, tw = rotated_text.shape[:2]
 
-            
             #call all detected boxes
             for i in range(len(results_head)):
                 
@@ -297,50 +312,41 @@ try:
                 boxes = result.xyxy
                 scores = result.confidence
                 classes = result.class_id
-                
+
                 print("Result %s" %len(results_head))
-                        
+
                 for box, score, cls in zip(boxes, scores, classes):
-                    
+
                     print(f"Object: {cls} | Bounding Box: {box.tolist()} | Confidence Score: {score:.2f}")
 
                     cords = box.tolist()
                     x1, y1, x2, y2 = [int(x) for x in cords]
                     box = box.astype(int)
-                    #cv2.rectangle(rgb_like_intensityImg, (box[0], box[1]), (box[2], box[3]), (0,255,0), 2)
+                    cv2.rectangle(rgb_like_intensityImg_xyxy, (box[0], box[1]), (box[2], box[3]), (0,255,0), 2)
             
                     #Text:Confidence level
-                    text = f"{score:.2f}"
-                    coordinates = (int(box[0]), int(box[1])-20)
+                    text = f"Score: {score:.2f}"
+                    coordinates = (int(box[0]), int(box[1]-5))
                     font = cv2.FONT_HERSHEY_SIMPLEX
-                    font_scale = 1
+                    font_scale = 0.5
                     color = (255 , 0, 0) #Blue
                     thickness = 2
-                    
-                    #cv2.putText(rgb_like_intensityImg,  text, coordinates, font, font_scale, color, thickness, cv2.LINE_AA)
-                    
+
+                    cv2.putText(rgb_like_intensityImg_xyxy,  text, coordinates, font, font_scale, color, thickness, cv2.LINE_AA)
+
                     #Text:Coordinate Value
                     x_px_center = int((box[0]+box[2])/2)
                     y_px_center = int((box[1]+box[3])/2)
                     text = f"({x_px_center}, {y_px_center})"
                     
-                    text = f"Welcome to Jarvis!"
-                    coordinates = (int(box[0] - 100), int(box[1] - 20))
-                    font = cv2.FONT_HERSHEY_SIMPLEX
-                    font_scale = 1
-                    color = (255 , 0, 0) #Blue
-                    thickness = 2
-                    
-                    #cv2.putText(rgb_like_intensityImg,  text, coordinates, font, font_scale, color, thickness, cv2.LINE_AA)
-                    
                     #Dot on an input image
 
-                    dot_center = (int(x_px_center), int(y_px_center))
+                    dot_center = (int(x_px_center), int(y_px_center - 80))
                     dot_radius = 5
-                    dot_color = (255,0,0) #Blue
+                    dot_color = (0,0,255) #red
                     dot_thinkness = -1
                     
-                    #cv2.circle(rgb_like_intensityImg, dot_center, dot_radius, dot_color, dot_thinkness)
+                    cv2.circle(rgb_like_intensityImg_xyxy, dot_center, dot_radius, dot_color, dot_thinkness)
                     
                     #_3D image xy coordinate: center of the image. 
                     x_coord = _3d[y_px_center, x_px_center, 0]
@@ -398,9 +404,17 @@ try:
                     dot_thinkness = -1
 
                     #cv2.circle(rgb_like_intensityImg, dot_center, dot_radius, dot_color, dot_thinkness)
-                """
+               """
+               
+            
+            rgb_like_intensityImg_xyxy_resize = cv2.resize(rgb_like_intensityImg_xyxy, (WINDOW_WIDTH, int(WINDOW_HEIGHT/2)))
+            rgb_like_intensityImg_text_resize = cv2.resize(rgb_like_intensityImg, (WINDOW_WIDTH, int(WINDOW_HEIGHT)))
+            v_combined_screen = np.vstack((rgb_like_confidenceImg_resize, rgb_like_intensityImg_xyxy_resize))
+            combined_screen = np.hstack((v_combined_screen, rgb_like_intensityImg_text_resize))
+            
+            cv2.imshow('_2d_inten_confidence_color', combined_screen)
             cv2.imshow('_2d_intensity_color', rgb_like_intensityImg)
-            cv2.imshow('depth', _3d_scaled[:, :, 2].astype(np.uint8))
+            #cv2.imshow('depth', _3d_scaled[:, :, 2].astype(np.uint8))
 
             #cv2.imwrite(fr"_2d_intensity/{now}.png", _2d_intensity)
             #cv2.imwrite(fr"_2d_confidence/{now}.png", _2d_confidence)
