@@ -286,13 +286,13 @@ try:
             rgb_like_confidenceImg = (rgb_like_confidenceImg/256).astype(np.uint8)
             
             #Resize the confidence and intensity images
-            rgb_like_confidenceImg_resize = cv2.resize(rgb_like_confidenceImg, (WINDOW_WIDTH, int(WINDOW_HEIGHT/2)))
+            
             #copy the intensity image in different memory
             rgb_like_intensityImg_xyxy = rgb_like_intensityImg.copy()
 
             now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S") 
-            #outputs = faceModel(rgb_like_intensityImg, conf=0.5)
-            outputs = faceModel(rgb_like_intensityImg, conf=0.3)
+
+            outputs = faceModel(rgb_like_intensityImg, conf=0.5)
             results_head = Detections.from_ultralytics(outputs[0])
             
             #results_hand = handModel(rgb_like_confidenceImg, iou=0.45, conf=0.25)
@@ -344,18 +344,33 @@ try:
                     dot_center = (int(x_px_center), int(y_px_center - 80))
                     dot_radius = 5
                     dot_color = (0,0,255) #red
-                    dot_thinkness = -1
-                    
-                    cv2.circle(rgb_like_intensityImg_xyxy, dot_center, dot_radius, dot_color, dot_thinkness)
+                    dot_thickness = -1
+                    cv2.circle(rgb_like_intensityImg_xyxy, dot_center, dot_radius, dot_color, dot_thickness)
                     
                     #_3D image xy coordinate: center of the image. 
                     x_coord = _3d[y_px_center, x_px_center, 0]
                     y_coord = _3d[y_px_center, x_px_center, 1]
                     z_depth = _3d[y_px_center, x_px_center, 2]
-                    
+
                     # Print out the distance in millimeters (mm)
                     print(f"Coordinates at ({x_px_center}, {y_px_center}) -> X: {x_coord:.2f}mm, Y: {y_coord:.2f}mm, Depth (Z): {z_depth:.2f}mm")
 
+                    #Text: depth to the center of face
+                    text = f"Depth(mm): {z_depth:.2f}"
+                    coordinates = (int(x_px_center), int(y_px_center-80))
+                    font = cv2.FONT_HERSHEY_SIMPLEX
+                    font_scale = 0.5
+                    color = (255 , 0, 0) #Blue
+                    thickness = 2
+                    cv2.putText(rgb_like_confidenceImg,  text, coordinates, font, font_scale, color, thickness, cv2.LINE_AA)
+                    
+                    #Dot: label a circle dot on the face
+                    dot_center = (int(x_px_center), int(y_px_center))
+                    dot_radius = 3
+                    dot_color = (0,255,0) #Green
+                    dot_thickness = -1
+                    cv2.circle(rgb_like_confidenceImg, dot_center, dot_radius, dot_color, dot_thickness)
+                    
                     x_off = x_px_center 
                     y_off = y_px_center - 80
                     
@@ -406,13 +421,18 @@ try:
                     #cv2.circle(rgb_like_intensityImg, dot_center, dot_radius, dot_color, dot_thinkness)
                """
                
-            
+            rgb_like_confidenceImg_resize = cv2.resize(rgb_like_confidenceImg, (WINDOW_WIDTH, int(WINDOW_HEIGHT/2)))
             rgb_like_intensityImg_xyxy_resize = cv2.resize(rgb_like_intensityImg_xyxy, (WINDOW_WIDTH, int(WINDOW_HEIGHT/2)))
             rgb_like_intensityImg_text_resize = cv2.resize(rgb_like_intensityImg, (WINDOW_WIDTH, int(WINDOW_HEIGHT)))
             v_combined_screen = np.vstack((rgb_like_confidenceImg_resize, rgb_like_intensityImg_xyxy_resize))
             combined_screen = np.hstack((v_combined_screen, rgb_like_intensityImg_text_resize))
             
-            cv2.imshow('_2d_inten_confidence_color', combined_screen)
+            # Make the display resizable window
+            cv2.namedWindow('_2d_Images_W/Text', cv2.WINDOW_NORMAL)
+            # 2. Force the window to expand into full-screen mode
+            cv2.setWindowProperty('_2d_Images_W/Text', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+            
+            cv2.imshow('_2d_Images_W/Text', combined_screen)
             cv2.imshow('_2d_intensity_color', rgb_like_intensityImg)
             #cv2.imshow('depth', _3d_scaled[:, :, 2].astype(np.uint8))
 
